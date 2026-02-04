@@ -16,14 +16,6 @@ export default function Home() {
             CheckSalary
           </span>
         </div>
-        <div className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-500">
-          <a href="#" className="hover:text-slate-900 transition-colors">
-            Calculator
-          </a>
-          <a href="#" className="hover:text-slate-900 transition-colors">
-            Admin Settings
-          </a>
-        </div>
       </nav>
 
       {/* Main Content */}
@@ -102,7 +94,7 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="w-full border-t border-slate-200 mt-auto bg-white">
-        <div className="max-w-7xl mx-auto px-6 py-12 grid grid-cols-1 md:grid-cols-5 gap-8">
+        <div className="max-w-7xl mx-auto px-6 py-12 grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="col-span-1 md:col-span-2 space-y-4">
             <div className="flex items-center gap-2">
               <div className="w-6 h-6 bg-green-500 rounded-md flex items-center justify-center text-white">
@@ -123,22 +115,6 @@ export default function Home() {
               Wyliczenia mają charakter szacunkowy i nie stanowią porady
               podatkowej.
             </p>
-          </div>
-
-          <div className="space-y-4">
-            <h4 className="font-semibold text-slate-900 text-sm">Navigation</h4>
-            <ul className="space-y-2 text-sm text-slate-500">
-              <li>
-                <a href="#" className="hover:text-green-600">
-                  Calculator
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-green-600">
-                  Admin Settings
-                </a>
-              </li>
-            </ul>
           </div>
 
           <div className="space-y-4">
