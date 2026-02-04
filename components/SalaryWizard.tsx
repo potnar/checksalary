@@ -30,7 +30,9 @@ export default function SalaryWizard() {
   const [step, setStep] = useState(1);
   const [contractType, setContractType] = useState<ContractType>(null);
   const [grossAmount, setGrossAmount] = useState<string>("");
+  const [costsAmount, setCostsAmount] = useState<string>("");
   const [isReliefStart, setIsReliefStart] = useState(false);
+  const [viewMode, setViewMode] = useState<"real" | "invoice" | "zero">("real");
   const [result, setResult] = useState<CalculationResult | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -61,16 +63,27 @@ export default function SalaryWizard() {
 
   const performCalculation = () => {
     const gross = parseFloat(grossAmount);
+    const costs = parseFloat(costsAmount) || 0;
     let net = 0;
 
     if (contractType === "uop") {
       net = gross * 0.71;
     } else if (contractType === "b2b") {
       const zus = isReliefStart ? 380 : 1600;
-      const incomeTax = (gross - zus) * 0.19;
-      net = gross - incomeTax - zus;
-      if (!isReliefStart) net = gross * 0.76;
-      else net = gross * 0.82;
+      // Tax Base = Revenue - ZUS - Costs
+      const taxBase = Math.max(0, gross - zus - costs);
+      const incomeTax = taxBase * 0.19;
+
+      // Net (Profit on Invoice level) = Revenue - ZUS - IncomeTax
+      // We calculate the accounting net here.
+      // The "Real Cash" view will subtract costs from this value if toggled.
+      net = gross - zus - incomeTax;
+
+      if (!isReliefStart) {
+        net = gross - incomeTax - zus;
+      } else {
+        net = gross - incomeTax - zus;
+      }
     } else if (contractType === "uz") {
       net = gross * 0.75;
     }
@@ -82,7 +95,9 @@ export default function SalaryWizard() {
     setStep(STEPS.SELECTION);
     setContractType(null);
     setGrossAmount("");
+    setCostsAmount("");
     setResult(null);
+    setViewMode("real");
   };
 
   const renderStep = () => {
@@ -116,9 +131,8 @@ export default function SalaryWizard() {
                 title="B2B (Small ZUS)"
                 subtitle="Discounted ZUS for first 24 months of your project."
                 icon={<Briefcase />}
-                // Just a visual variant for filling grid, logic maps to same b2b but could use param
                 onClick={() => handleContractSelect("b2b")}
-                active={false} // Demo state
+                active={false}
               />
               <ContractCard
                 title="UoP"
@@ -173,6 +187,26 @@ export default function SalaryWizard() {
                   </span>
                 </div>
               </div>
+
+              {contractType === "b2b" && (
+                <div>
+                  <label className="block text-xs font-bold uppercase text-slate-500 tracking-wider mb-2">
+                    Business Costs (Net)
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      value={costsAmount}
+                      onChange={(e) => setCostsAmount(e.target.value)}
+                      className="w-full bg-white border border-slate-200 rounded-lg py-4 px-4 text-slate-900 font-medium focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all placeholder:text-slate-300 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      placeholder="e.g. 2000"
+                    />
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-semibold">
+                      PLN
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
 
             {contractType === "b2b" && (
@@ -225,21 +259,96 @@ export default function SalaryWizard() {
 
       case STEPS.RESULT:
         if (!result) return null;
+
+        const gross = parseFloat(grossAmount);
+        const costs = parseFloat(costsAmount) || 0;
+
+        // --- CALCULATION LOGIC FOR DISPLAY MODES ---
+        const zus =
+          contractType === "b2b" && isReliefStart
+            ? 380
+            : contractType === "b2b"
+              ? 1600
+              : 0;
+
+        // 1. Invoice (Accounting Net) - With tax shield, but before paying costs
+        const taxBaseWith = Math.max(0, gross - zus - costs);
+        const taxWith = taxBaseWith * 0.19;
+        const netInvoice = gross - zus - taxWith;
+
+        // 2. Real Cash - Just Net Invoice minus Costs
+        const realCash = netInvoice - costs;
+
+        // 3. No Costs (Zero) - As if costs were 0
+        const taxBaseZero = Math.max(0, gross - zus);
+        const taxZero = taxBaseZero * 0.19;
+        const netZero = gross - zus - taxZero;
+
+        // Mode logic
+        let displayValue = result.net;
+        let diffLabel = "Taxes & ZUS";
+        let taxesDisplay = 0;
+
+        if (contractType === "b2b" && costs > 0) {
+          if (viewMode === "real") {
+            displayValue = realCash;
+            taxesDisplay = zus + taxWith;
+          } else if (viewMode === "invoice") {
+            displayValue = netInvoice;
+            taxesDisplay = zus + taxWith;
+          } else {
+            displayValue = netZero;
+            taxesDisplay = zus + taxZero;
+          }
+        } else {
+          taxesDisplay = gross - result.net;
+        }
+
         return (
           <motion.div
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
             className="text-center space-y-8 py-2"
           >
-            <div className="bg-green-50 border border-green-100 p-8 rounded-2xl space-y-2">
-              <p className="text-xs text-green-600 font-bold uppercase tracking-widest">
-                Estimated Net Monthly
-              </p>
-              <div className="flex items-baseline justify-center gap-2 text-green-700">
-                <span className="text-5xl font-extrabold tracking-tight">
-                  {result.net.toLocaleString("pl-PL")}
-                </span>
-                <span className="text-xl font-medium opacity-60">PLN</span>
+            <div className="bg-green-50 border border-green-100 p-6 md:p-8 rounded-2xl space-y-6 relative overflow-visible">
+              {contractType === "b2b" && costs > 0 && (
+                <div className="flex justify-center -mt-2 mb-6">
+                  <div className="inline-flex bg-white p-1 rounded-xl shadow-sm border border-green-100">
+                    <button
+                      onClick={() => setViewMode("real")}
+                      className={`px-3 py-1.5 text-[10px] md:text-xs font-bold uppercase tracking-wide rounded-lg transition-all ${viewMode === "real" ? "bg-green-500 text-white shadow-sm" : "text-slate-400 hover:text-green-600"}`}
+                    >
+                      Real Cash
+                    </button>
+                    <button
+                      onClick={() => setViewMode("invoice")}
+                      className={`px-3 py-1.5 text-[10px] md:text-xs font-bold uppercase tracking-wide rounded-lg transition-all ${viewMode === "invoice" ? "bg-green-500 text-white shadow-sm" : "text-slate-400 hover:text-green-600"}`}
+                    >
+                      Invoice Net
+                    </button>
+                    <button
+                      onClick={() => setViewMode("zero")}
+                      className={`px-3 py-1.5 text-[10px] md:text-xs font-bold uppercase tracking-wide rounded-lg transition-all ${viewMode === "zero" ? "bg-green-500 text-white shadow-sm" : "text-slate-400 hover:text-green-600"}`}
+                    >
+                      Ignoring Costs
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <p className="text-xs text-green-600 font-bold uppercase tracking-widest">
+                  Estimated Net
+                  {viewMode === "real" && " (On Hand)"}
+                  {viewMode === "invoice" && " (Transfer)"}
+                  {viewMode === "zero" && " (No Costs)"}
+                </p>
+                <div className="flex items-baseline justify-center gap-2 text-green-700">
+                  <span className="text-5xl font-extrabold tracking-tight">
+                    {Math.round(displayValue).toLocaleString("pl-PL")}
+                  </span>
+                  <span className="text-xl font-medium opacity-60">PLN</span>
+                </div>
               </div>
             </div>
 
@@ -257,11 +366,7 @@ export default function SalaryWizard() {
                   Taxes & ZUS
                 </p>
                 <p className="font-semibold text-slate-700 text-lg">
-                  ~
-                  {(parseFloat(grossAmount || "0") - result.net).toLocaleString(
-                    "pl-PL",
-                  )}{" "}
-                  PLN
+                  ~{Math.round(taxesDisplay).toLocaleString("pl-PL")} PLN
                 </p>
               </div>
             </div>
