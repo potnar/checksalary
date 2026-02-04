@@ -102,7 +102,7 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="w-full border-t border-slate-200 mt-auto bg-white">
-        <div className="max-w-7xl mx-auto px-6 py-12 grid grid-cols-1 md:grid-cols-4 gap-8">
+        <div className="max-w-7xl mx-auto px-6 py-12 grid grid-cols-1 md:grid-cols-5 gap-8">
           <div className="col-span-1 md:col-span-2 space-y-4">
             <div className="flex items-center gap-2">
               <div className="w-6 h-6 bg-green-500 rounded-md flex items-center justify-center text-white">
@@ -150,6 +150,32 @@ export default function Home() {
               <li>
                 <a href="#" className="hover:text-green-600">
                   Terms of Use
+                </a>
+              </li>
+            </ul>
+          </div>
+
+          <div className="space-y-4">
+            <h4 className="font-semibold text-slate-900 text-sm">Support Me</h4>
+            <ul className="space-y-2 text-sm text-slate-500">
+              <li>
+                <a
+                  href="https://rejestracja.maratonwarszawski.com/pl/fundraising/78340dd5-a8e8-4540-8852-2222942ed145"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-green-600 flex items-center gap-1"
+                >
+                  Marathon Fundraising
+                </a>
+              </li>
+              <li>
+                <a
+                  href="https://buycoffee.to/potnar"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-green-600 flex items-center gap-1"
+                >
+                  Buy Coffee for Potnar
                 </a>
               </li>
             </ul>
