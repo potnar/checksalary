@@ -119,6 +119,10 @@ export default function Home() {
             <p className="text-xs text-slate-400 mt-4">
               © {new Date().getFullYear()} CheckSalary. All rights reserved.
             </p>
+            <p className="text-[10px] text-slate-300 mt-1">
+              Wyliczenia mają charakter szacunkowy i nie stanowią porady
+              podatkowej.
+            </p>
           </div>
 
           <div className="space-y-4">
