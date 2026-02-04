@@ -30,6 +30,7 @@ export default function SalaryWizard() {
   const [step, setStep] = useState(1);
   const [contractType, setContractType] = useState<ContractType>(null);
   const [grossAmount, setGrossAmount] = useState<string>("");
+  const [showSupport, setShowSupport] = useState(false);
   const [costsAmount, setCostsAmount] = useState<string>("");
   const [isReliefStart, setIsReliefStart] = useState(false);
   const [viewMode, setViewMode] = useState<"real" | "invoice" | "zero">("real");
@@ -94,6 +95,7 @@ export default function SalaryWizard() {
     setCostsAmount("");
     setResult(null);
     setViewMode("real");
+    setShowSupport(false);
   };
 
   const renderStep = () => {
@@ -393,12 +395,25 @@ export default function SalaryWizard() {
     }
   };
 
+  useEffect(() => {
+    if (step === STEPS.RESULT) {
+      const timer = setTimeout(() => {
+        setShowSupport(true);
+      }, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [step]);
+
   return (
     <div
       ref={containerRef}
       className="w-full bg-white rounded-2xl shadow-sm border border-slate-200 p-8 md:p-10 relative overflow-hidden"
     >
       <AnimatePresence mode="wait">{renderStep()}</AnimatePresence>
+
+      <AnimatePresence>
+        {showSupport && <SupportModal onClose={() => setShowSupport(false)} />}
+      </AnimatePresence>
     </div>
   );
 }
@@ -461,5 +476,69 @@ function ContractCard({
         More Info
       </div>
     </div>
+  );
+}
+
+function SupportModal({ onClose }: { onClose: () => void }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-white/80 backdrop-blur-sm"
+    >
+      <motion.div
+        initial={{ scale: 0.9, y: 20 }}
+        animate={{ scale: 1, y: 0 }}
+        exit={{ scale: 0.9, y: 20 }}
+        className="bg-white border border-slate-200 shadow-xl rounded-2xl p-6 max-w-sm w-full text-center space-y-4 relative"
+      >
+        <button
+          onClick={onClose}
+          className="absolute top-3 right-3 text-slate-400 hover:text-slate-600 transition-colors"
+        >
+          <div className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-slate-100">
+            ✕
+          </div>
+        </button>
+
+        <div className="w-12 h-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-2">
+          <Check className="w-6 h-6" />
+        </div>
+
+        <div className="space-y-1">
+          <h3 className="font-bold text-lg text-slate-900">Hope this helps!</h3>
+          <p className="text-sm text-slate-500">
+            If you found this calculator useful, consider supporting my work.
+          </p>
+        </div>
+
+        <div className="space-y-3 pt-2">
+          <a
+            href="https://rejestracja.maratonwarszawski.com/pl/fundraising/78340dd5-a8e8-4540-8852-2222942ed145"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block w-full py-3 bg-green-500 hover:bg-green-600 text-white font-bold rounded-xl transition-colors text-sm"
+          >
+            Support Marathon 🏃
+          </a>
+          <a
+            href="https://buycoffee.to/potnar"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-colors text-sm"
+          >
+            Buy me a coffee ☕
+          </a>
+        </div>
+
+        <button
+          onClick={onClose}
+          className="text-xs text-slate-400 hover:text-slate-600 font-medium pt-2"
+        >
+          Maybe later
+        </button>
+      </motion.div>
+    </motion.div>
   );
 }
